@@ -198,9 +198,3 @@ GitLab automatically starts the pipeline.
 
 After the pipeline succeeds, the updated Docker container is running on the Azure VM.
 
----
-## Author
-
-**Basel Alzahrani**
-
-Software Engineering
