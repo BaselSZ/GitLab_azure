@@ -1,0 +1,26 @@
+stages:
+  - test
+  - build
+  - deploy
+
+test:
+  stage: test
+  image: python:3.12-slim
+  script:
+    - pip install -r requirements.txt
+    - python -c "from app import app; print('Application test passed')"
+
+build:
+  stage: build
+  image: docker:27
+  script:
+    - docker build -t demo-app:latest .
+
+deploy:
+  stage: deploy
+  image: docker:27
+  script:
+    - docker stop demo-app || true
+    - docker rm demo-app || true
+    - docker run -d --name demo-app -p 5000:5000 demo-app:latest
+    - docker ps
