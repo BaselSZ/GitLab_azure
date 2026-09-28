@@ -25,7 +25,7 @@
     #computer_name = "web-vm" # Hostname of the VM (Optional)
     resource_group_name   = azurerm_resource_group.rg.name
     location              = azurerm_resource_group.rg.location
-    size                  = "Standard_D2alds_v6"
+    size                  = "Standard_D4alds_v6"
     admin_username        = "azureuser"
     network_interface_ids = [azurerm_network_interface.web_vm_nic.id]
     admin_ssh_key {
@@ -35,7 +35,7 @@
     os_disk {
       caching              = "ReadWrite"
       storage_account_type = "Premium_LRS"
-      disk_size_gb         = 30
+      disk_size_gb         = 64
     }
     # az vm image list --publisher Canonical --offer ubuntu-24 --architecture x64 --sku server --output table --all
     source_image_reference {
