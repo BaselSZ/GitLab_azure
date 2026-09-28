@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Hello from GitLab CI/CD! automated updates"
+    return "Hello from GitLab CI/CD! automated updates final"
 
 @app.route("/health")
 def health():
