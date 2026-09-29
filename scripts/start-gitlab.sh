@@ -3,35 +3,44 @@
 set -e
 
 echo "======================================"
-echo " GitLab Installation Script"
+echo " GitLab Installation"
 echo "======================================"
 
-# -----------------------------
+# --------------------------------------
 # Configuration
-# -----------------------------
+# --------------------------------------
 
 GITLAB_DIR="$HOME/GitLab_azure/gitlab"
 
-# The script can receive the public IP as an argument:
-# ./install-gitlab.sh 20.65.117.37
-
+# Public IP must be provided as an argument
 if [ -z "$1" ]; then
-    echo "Usage: ./install-gitlab.sh <PUBLIC_IP>"
-    echo "Example: ./install-gitlab.sh 20.65.117.37"
+    echo ""
+    echo "Usage:"
+    echo "  ./install-gitlab.sh <PUBLIC_IP>"
+    echo ""
+    echo "Example:"
+    echo "  ./install-gitlab.sh 20.65.117.37"
+    echo ""
     exit 1
 fi
 
 PUBLIC_IP="$1"
 
-# -----------------------------
-# Check / Install Docker
-# -----------------------------
+echo ""
+echo "GitLab public IP: $PUBLIC_IP"
+echo "GitLab directory: $GITLAB_DIR"
+
+# --------------------------------------
+# 1. Install Docker
+# --------------------------------------
 
 echo ""
 echo "[1/5] Checking Docker..."
 
-if ! command -v docker >/dev/null 2>&1; then
-    echo "Docker is not installed. Installing Docker..."
+if command -v docker >/dev/null 2>&1; then
+    echo "Docker is already installed."
+else
+    echo "Docker is not installed. Installing..."
 
     sudo apt-get update
     sudo apt-get install -y docker.io
@@ -39,14 +48,12 @@ if ! command -v docker >/dev/null 2>&1; then
     sudo systemctl enable docker
     sudo systemctl start docker
 
-    echo "Docker installed."
-else
-    echo "Docker is already installed."
+    echo "Docker installed successfully."
 fi
 
-# -----------------------------
-# Install Docker Compose
-# -----------------------------
+# --------------------------------------
+# 2. Install Docker Compose
+# --------------------------------------
 
 echo ""
 echo "[2/5] Checking Docker Compose..."
@@ -54,17 +61,17 @@ echo "[2/5] Checking Docker Compose..."
 if docker compose version >/dev/null 2>&1; then
     echo "Docker Compose is already installed."
 else
-    echo "Docker Compose is not available."
+    echo "Docker Compose is not installed. Installing..."
 
     sudo apt-get update
     sudo apt-get install -y docker-compose-plugin
 
-    echo "Docker Compose installed."
+    echo "Docker Compose installed successfully."
 fi
 
-# -----------------------------
-# Allow current user to use Docker
-# -----------------------------
+# --------------------------------------
+# 3. Configure Docker permissions
+# --------------------------------------
 
 echo ""
 echo "[3/5] Configuring Docker permissions..."
@@ -73,16 +80,23 @@ sudo usermod -aG docker "$USER"
 
 echo "Docker permissions configured."
 
-# -----------------------------
-# Create GitLab directory
-# -----------------------------
+# --------------------------------------
+# 4. Create GitLab configuration
+# --------------------------------------
 
 echo ""
 echo "[4/5] Creating GitLab configuration..."
 
 mkdir -p "$GITLAB_DIR"
 
-cat > "$GITLAB_DIR/docker-compose.yml" <<EOF
+# Create .env
+cat > "$GITLAB_DIR/.env" <<EOF
+GITLAB_EXTERNAL_URL=http://${PUBLIC_IP}
+GITLAB_SSH_PORT=2222
+EOF
+
+# Create docker-compose.yml
+cat > "$GITLAB_DIR/docker-compose.yml" <<'EOF'
 services:
   gitlab:
     image: gitlab/gitlab-ce:latest
@@ -92,8 +106,8 @@ services:
 
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://${PUBLIC_IP}'
-        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        external_url '${GITLAB_EXTERNAL_URL}'
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT}
 
     ports:
       - "80:80"
@@ -106,11 +120,11 @@ services:
       - ./data:/var/opt/gitlab
 EOF
 
-echo "Docker Compose configuration created."
+echo "GitLab configuration created."
 
-# -----------------------------
-# Start GitLab
-# -----------------------------
+# --------------------------------------
+# 5. Start GitLab
+# --------------------------------------
 
 echo ""
 echo "[5/5] Starting GitLab..."
@@ -121,12 +135,8 @@ sudo docker compose up -d
 
 echo ""
 echo "======================================"
-echo " GitLab installation started"
+echo " GitLab installation complete"
 echo "======================================"
-
-echo ""
-echo "GitLab directory:"
-echo "$GITLAB_DIR"
 
 echo ""
 echo "GitLab URL:"
@@ -137,23 +147,27 @@ echo "GitLab SSH port:"
 echo "2222"
 
 echo ""
-echo "Check container status with:"
-echo "sudo docker compose ps"
+echo "GitLab directory:"
+echo "$GITLAB_DIR"
 
 echo ""
-echo "Retrieve the initial root password with:"
+echo "Container status:"
+sudo docker compose ps
+
+echo ""
+echo "Initial root password:"
+echo "Run:"
 echo "sudo docker exec gitlab grep 'Password:' /etc/gitlab/initial_root_password"
 
 echo ""
 echo "IMPORTANT:"
-echo "GitLab may take several minutes to become healthy."
-echo "Check its status with:"
+echo "GitLab can take several minutes to become healthy."
+
+echo ""
+echo "Check GitLab status with:"
 echo "sudo docker ps"
 
 echo ""
-echo "If Docker permission changes are not active yet,"
-echo "log out and log back in before using Docker without sudo."
-
-echo ""
-echo "Installation complete."
-```
+echo "======================================"
+echo " Done"
+echo "======================================"
