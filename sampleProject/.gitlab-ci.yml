@@ -18,6 +18,8 @@ build:
 
 deploy:
   stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   image: docker:27
   script:
     - docker stop demo-app || true
